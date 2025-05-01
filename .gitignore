@@ -3,3 +3,5 @@ SHA1/
 x64/
 .vs/
 *.sln
+.vcxproj.user
+*.suo

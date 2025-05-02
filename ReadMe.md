@@ -8,7 +8,7 @@ Crypto++ Library is a free C++ class library of cryptographic schemes.
 
 ## Usage
 
-Для запуска программы перейдите в каталог ...\SHA1\x64\Debug или добавьте програмы в переменные среды (PATH)
+Для запуска программы перейдите в каталог ...\SHA1\x64\Debug или добавьте программу в переменные среды (PATH)
 ```
 ./SHA1.exe <Путь к файлу>
 ```

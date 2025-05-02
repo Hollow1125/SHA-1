@@ -51,7 +51,8 @@ void calculate_and_print_digest(const char* filename)
         cout << "Hash sum of a file: ";
         for (auto i : digest)
         {
-            cout << hex << setw(2) << setfill('0') << int(i);
+            // Преобразование аналогично "chunk"
+            cout << hex << setw(2) << setfill('0') << static_cast<int>(i);
         }
         cout << endl;
 

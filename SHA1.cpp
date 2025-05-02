@@ -9,16 +9,18 @@
 using namespace std;
 using namespace std::chrono;
 
-void calculate_and_print_digest()
+void calculate_and_print_digest(const char* filename)
 {
-    ifstream hash_file("D:\\VMs\\GOAD-DC01.ova", ios::binary);
+    ifstream hash_file(filename, ios::binary);
     if (hash_file.is_open())
     {
         hash_file.seekg(0, ios::end);
         size_t file_size = hash_file.tellg();
         hash_file.seekg(0, ios::beg);
 
-        size_t chunk = 1 << 25;
+        // блоку "1 << 25" С++ неявно присваивает тип int
+        // чтобы избежать переполнения нужно преобразовать в size_t
+        size_t chunk = static_cast<size_t>(1) << 25;
         size_t number_of_chunks = file_size / chunk;
         size_t leftover = file_size % chunk;
         //size_t orig = (number_of_chunks * chunk) + leftover;
@@ -41,6 +43,8 @@ void calculate_and_print_digest()
         }
         hash_file.read(buffer.data(), leftover);
         hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), chunk);
+
+        // Сборка всех кусков в один хэш
         hash.Final(digest);
         auto stop = high_resolution_clock::now();
         
@@ -51,7 +55,6 @@ void calculate_and_print_digest()
         }
         cout << endl;
 
-        // Если задать duration в секундах, то он выдаст 0 (время расчета меньше секунды)
         auto duration = duration_cast<microseconds>(stop - start);
         cout << "Digesting time: " << dec << duration.count() / 1e6 << " seconds" << endl;
         cout << "File size: " << dec << file_size / (1024 * 1024) << " MB" << endl;
@@ -64,8 +67,8 @@ void calculate_and_print_digest()
     };
 };
 
-int main()
+int main(int argc, char* argv[])
 {
-    calculate_and_print_digest();
+    calculate_and_print_digest(argv[1]);
     return 0;
 }

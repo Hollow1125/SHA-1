@@ -9,8 +9,6 @@
 using namespace std;
 using namespace std::chrono;
 
-//Библиотека cryptoPP была подключена для расчета скорости вычисления хэш-суммы
-//заданного мною файла и оценки производительности данной бибилиотеки
 void calculate_and_print_digest()
 {
     ifstream hash_file("D:\\VMs\\GOAD-DC01.ova", ios::binary);

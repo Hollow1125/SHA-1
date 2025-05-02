@@ -1,6 +1,3 @@
 cryptopp-master/
-SHA1/
-x64/
-.vs/
 SHA1.vcxproj.user
 SHA1.vcxproj.filters

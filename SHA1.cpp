@@ -23,32 +23,29 @@ void calculate_and_print_digest()
         size_t chunk = 1 << 25;
         size_t number_of_chunks = file_size / chunk;
         size_t leftover = file_size % chunk;
-        size_t orig = (number_of_chunks * chunk) + leftover;
-        size_t pos = 0;
+        //size_t orig = (number_of_chunks * chunk) + leftover;
+        //size_t pos = 0;
         vector<char> buffer(chunk, 0);
-      
-        for (int i = 0; i < number_of_chunks; i++)
-        {
-            hash_file.read(buffer.data(), chunk);
-            pos = hash_file.tellg();
-        }
-        hash_file.read(buffer.data(), leftover);
-        pos = hash_file.tellg();
         
-        cin.get();
-        cout << endl;
-        vector<char> hash_data(file_size, 0);
-        hash_file.read(hash_data.data(), file_size);
+        // Хэш из нескольких блоков данных
+        // https://cryptopp.com/wiki/Hash_Functions
+        // Расчет скорости:
+        // https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
 
         uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
         CryptoPP::SHA1 hash;
 
-        // Расчет скорости:
-        // https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
         auto start = high_resolution_clock::now();
-        hash.CalculateDigest(digest, reinterpret_cast<const CryptoPP::byte*>(hash_data.data()), hash_data.size());
+        for (int i = 0; i < number_of_chunks; i++)
+        {
+            hash_file.read(buffer.data(), chunk);
+            hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), chunk);
+        }
+        hash_file.read(buffer.data(), leftover);
+        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), chunk);
+        hash.Final(digest);
         auto stop = high_resolution_clock::now();
-
+        
         cout << "Hash sum of a file: ";
         for (auto i : digest)
         {

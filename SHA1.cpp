@@ -13,16 +13,32 @@ using namespace std::chrono;
 //заданного мною файла и оценки производительности данной бибилиотеки
 void calculate_and_print_digest()
 {
-    ifstream hash_file("D:\\GOAD-SRV03.ova", ios::binary);
+    ifstream hash_file("D:\\VMs\\GOAD-DC01.ova", ios::binary);
     if (hash_file.is_open())
     {
         hash_file.seekg(0, ios::end);
-        int file_size = hash_file.tellg();
+        size_t file_size = hash_file.tellg();
         hash_file.seekg(0, ios::beg);
 
+        size_t chunk = 1 << 25;
+        size_t number_of_chunks = file_size / chunk;
+        size_t leftover = file_size % chunk;
+        size_t orig = (number_of_chunks * chunk) + leftover;
+        size_t pos = 0;
+        vector<char> buffer(chunk, 0);
+      
+        for (int i = 0; i < number_of_chunks; i++)
+        {
+            hash_file.read(buffer.data(), chunk);
+            pos = hash_file.tellg();
+        }
+        hash_file.read(buffer.data(), leftover);
+        pos = hash_file.tellg();
+        
+        cin.get();
+        cout << endl;
         vector<char> hash_data(file_size, 0);
         hash_file.read(hash_data.data(), file_size);
-
 
         uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
         CryptoPP::SHA1 hash;
@@ -39,11 +55,11 @@ void calculate_and_print_digest()
             cout << hex << setw(2) << setfill('0') << int(i);
         }
         cout << endl;
-        cout << "ferff" << endl;
+
         // Если задать duration в секундах, то он выдаст 0 (время расчета меньше секунды)
         auto duration = duration_cast<microseconds>(stop - start);
         cout << "Digesting time: " << dec << duration.count() / 1e6 << " seconds" << endl;
-        //cout << dec << file_size << " bytes" << endl;
+        cout << "File size: " << dec << file_size / (1024 * 1024) << " MB" << endl;
 
         // Перевод B/mus в MB/s
         double speed = (file_size / 1e6) / (duration.count() / 1e6);
@@ -58,3 +74,21 @@ int main()
     calculate_and_print_digest();
     return 0;
 }
+
+
+
+
+/*
+ // Hash in chunks to avoid memory issues
+    const size_t BUFFER_SIZE = 1 << 20;  // 1 MB == 00000000 00010000 00000000 00000000
+    vector<char> buffer(BUFFER_SIZE);
+    uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
+    CryptoPP::SHA1 hash;
+
+    auto start = high_resolution_clock::now();
+    while (hash_file.read(buffer.data(), BUFFER_SIZE)) {
+        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), hash_file.gcount());
+    }
+    hash.Final(digest);
+    auto stop = high_resolution_clock::now();
+*/

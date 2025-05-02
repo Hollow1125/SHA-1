@@ -69,21 +69,3 @@ int main()
     calculate_and_print_digest();
     return 0;
 }
-
-
-
-
-/*
- // Hash in chunks to avoid memory issues
-    const size_t BUFFER_SIZE = 1 << 20;  // 1 MB == 00000000 00010000 00000000 00000000
-    vector<char> buffer(BUFFER_SIZE);
-    uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
-    CryptoPP::SHA1 hash;
-
-    auto start = high_resolution_clock::now();
-    while (hash_file.read(buffer.data(), BUFFER_SIZE)) {
-        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), hash_file.gcount());
-    }
-    hash.Final(digest);
-    auto stop = high_resolution_clock::now();
-*/

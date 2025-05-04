@@ -4,13 +4,13 @@
 #pragma warning(disable : 4996)
 
 #include <iostream>
-#include <iomanip>
 #include <vector>
 #include <cstdint>
 #include <ippcp.h>
 #include <ipp.h>
 #include <fstream>
 #include <chrono>
+#include <iomanip>
 
 
 using namespace std;
@@ -51,6 +51,8 @@ void IntelPP_hash(const char* filename)
 
         // Очистка памяти
         ippsFree(hash);
+
+        cout << "Intel IPP: " << endl;
 
         cout << "Hash sum of a file: ";
         for (auto i : digest)

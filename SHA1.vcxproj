@@ -106,16 +106,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_MT;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include\crypto_mb;C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include\ippcp;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\include\ipp;C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\include;E:\Programming\Visual Studio Projects\SHA1\cryptopp-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include\crypto_mb;C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include\ippcp;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\include\ipp;C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\include;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\include;E:\Programming\Visual Studio Projects\SHA1\cryptopp-master\x64\Output\Debug;E:\Programming\Visual Studio Projects\SHA1\cryptopp-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ippcore.lib;ipps.lib;ippdc.lib;ippcp.lib;
-;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\lib;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippdcmt.lib;ippcpmt.lib;bcrypt.lib;ncrypt.lib;crypt32.lib;cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Intel\oneAPI\ippcp\2025.1\lib;E:\Programming\Visual Studio Projects\SHA1\cryptopp-master\x64\Output\Debug;E:\Programming\Visual Studio Projects\SHA1\cryptopp-master;C:\Program Files (x86)\Intel\oneAPI\ipp\2022.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -126,6 +126,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

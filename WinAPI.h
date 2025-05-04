@@ -2,11 +2,11 @@
 #define WINAPI_H
 
 #include <iostream>
-//#include <iomanip>
 #include <vector>
 #include <cstdint>
 #include <fstream>
 #include <chrono>
+#include <iomanip>
 #include <windows.h>
 #include <bcrypt.h>
 
@@ -36,22 +36,56 @@ void WinAPI_hash(const char* filename)
         BCRYPT_ALG_HANDLE hAlg = nullptr;
         BCRYPT_HASH_HANDLE hHash = nullptr;
         BYTE digest [SHA1LEN];
+        NTSTATUS status;
 
-        BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA1_ALGORITHM, NULL, 0);
-        BCryptCreateHash(hAlg, &hHash, NULL, NULL, 0, 0, 0);
+        // Без return значений компилятор жалуется на игнорирование возвращаемого значения (С6031)
+        status = BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA1_ALGORITHM, NULL, 0);
+        if (status != 0)
+        {
+            cout << "Failed to open algorithm provider" << endl;
+            return;
+        }
+        
+        status = BCryptCreateHash(hAlg, &hHash, NULL, NULL, 0, 0, 0);
+        if (status != 0)
+        {
+            cout << "Failed to create hash" << endl;
+            return;
+        }
 
         auto start = high_resolution_clock::now();
 
         for (int i = 0; i < number_of_chunks; i++)
         {
             hash_file.read(buffer.data(), chunk);
-            BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(chunk), 0);
+            status = BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(chunk), 0);
+            if (status != 0)
+            {
+                cout << "Failed to digest chunk #" << i << endl;
+                return;
+            }
         }
         hash_file.read(buffer.data(), leftover);
-        BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(leftover), 0);
-        BCryptFinishHash(hHash, digest, SHA1LEN, 0);
+        status = BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(leftover), 0);
+        if (status != 0)
+        {
+            cout << "Failed to digest last chunk" << endl;
+            return;
+        }
+        status = BCryptFinishHash(hHash, digest, SHA1LEN, 0);
+        if (status != 0)
+        {
+            cout << "Failed to finish hash" << endl;
+            return;
+        }
 
         auto stop = high_resolution_clock::now();
+
+        // Сворачивание алгоритма
+        BCryptDestroyHash(hHash);
+        BCryptCloseAlgorithmProvider(hAlg, 0);
+
+        cout << "Windows standard API: " << endl;
 
         cout << "Hash sum of a file: ";
         for (auto i : digest)

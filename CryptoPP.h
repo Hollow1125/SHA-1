@@ -2,12 +2,12 @@
 #define CRYPTOPP_H
 
 #include <iostream>
-#include <iomanip>
 #include <vector>
 #include <cstdint>
 #include <cryptopp/sha.h>
 #include <fstream>
 #include <chrono>
+#include <iomanip>
 
 
 using namespace std;
@@ -49,6 +49,8 @@ void CryptoPP_hash(const char* filename)
         // Сборка всех кусков в один хэш
         hash.Final(digest);
         auto stop = high_resolution_clock::now();
+
+        cout << "CryptoPP: " << endl;
 
         cout << "Hash sum of a file: ";
         for (auto i : digest)

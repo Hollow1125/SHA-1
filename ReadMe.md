@@ -10,7 +10,7 @@ Libraries tested:
 
 To compile this program on your own PC you'll need:
 
-### cryptopp library
+### CryptoPP library:
 ```
 https://www.cryptopp.com/#download
 ```
@@ -22,7 +22,7 @@ https://github.com/weidai11/cryptopp
 ```
 https://developer.microsoft.com/ru-ru/windows/downloads/windows-sdk/
 ```
-### Intel IPP tool:
+### Intel IPP:
 Base toolkit:
 ```
 https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html

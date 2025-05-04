@@ -5,7 +5,6 @@ Libraries tested:
 1. CryptoPP
 2. Intel IPP
 3. Standard Windows API (CNG)
-Despite the fact that `SHA-1` is already considered insecure and has been cracked several times, it is still one of the most wide-spread algorithms at use.
 
 ## Dependencies
 

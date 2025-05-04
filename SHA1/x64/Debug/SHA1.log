@@ -1,8 +1,8 @@
 ﻿  SHA1.cpp
-E:\Programming\Visual Studio Projects\SHA1\IPP.h(47,79): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+E:\Programming\Visual Studio Projects\SHA1\IPP.h(44,79): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
   (компиляция исходного файла "SHA1.cpp")
   
-E:\Programming\Visual Studio Projects\SHA1\IPP.h(50,75): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+E:\Programming\Visual Studio Projects\SHA1\IPP.h(47,75): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
   (компиляция исходного файла "SHA1.cpp")
   
   SHA1.vcxproj -> E:\Programming\Visual Studio Projects\SHA1\x64\Debug\SHA1.exe

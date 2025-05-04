@@ -30,9 +30,6 @@ void IntelPP_hash(const char* filename)
         size_t leftover = file_size % chunk;
         vector<char> buffer(chunk, 0);
 
-        // Расчет скорости:
-        // https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
-
         const IppsHashMethod* pMethod = ippsHashMethod_SHA1();
         int buffer_size = 0;
         ippsHashGetSize_rmf(&buffer_size);
@@ -49,7 +46,6 @@ void IntelPP_hash(const char* filename)
         hash_file.read(buffer.data(), leftover);
         ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), leftover, hash);
 
-        // Сборка всех кусков в один хэш
         ippsHashFinal_rmf(digest, hash);
         auto stop = high_resolution_clock::now();
 
@@ -59,7 +55,6 @@ void IntelPP_hash(const char* filename)
         cout << "Hash sum of a file: ";
         for (auto i : digest)
         {
-            // Преобразование аналогично "chunk"
             cout << hex << setw(2) << setfill('0') << static_cast<int>(i);
         }
         cout << endl;

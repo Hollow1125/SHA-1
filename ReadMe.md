@@ -4,7 +4,34 @@ This program uses several C++ libraries digestion functions to calculate hashes 
 Libraries tested:
 1. CryptoPP
 2. Intel IPP
-3. Standard Windows API
+3. Standard Windows API (CNG)
+Despite the fact that `SHA-1` is already considered insecure and has been cracked several times, it is still one of the most wide-spread algorithms at use.
+
+## Dependencies
+
+To compile this program on your own PC you'll need:
+
+### cryptopp library
+```
+https://www.cryptopp.com/#download
+```
+or
+```
+https://github.com/weidai11/cryptopp
+```
+### Windows SDK:
+```
+https://developer.microsoft.com/ru-ru/windows/downloads/windows-sdk/
+```
+### Intel IPP tool:
+Base toolkit:
+```
+https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html
+```
+Standalone version:
+```
+https://www.intel.com/content/www/us/en/developer/tools/oneapi/ipp-download.html
+```
 
 ## Usage
 

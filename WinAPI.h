@@ -105,7 +105,6 @@ void WinAPI_hash(const char* filename)
         hash_file.close();
 
         buffer.clear();
-        // Очистка heap
         buffer.shrink_to_fit();
         cout << endl;
     }

@@ -8,7 +8,6 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
-#include <future>
 
 using namespace std;
 using namespace std::chrono;

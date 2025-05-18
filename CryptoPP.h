@@ -8,50 +8,27 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
-
+#include <future>
 
 using namespace std;
 using namespace std::chrono;
 
-void CryptoPP_hash(const char* filename)
+void CryptoPP_hash(const char* filename, const vector<vector<char>> *buffer, const size_t *file_size)
 {
-    ifstream hash_file(filename, ios::binary);
-    if (hash_file.is_open())
-    {
-        hash_file.seekg(0, ios::end);
-        size_t file_size = hash_file.tellg();
-        hash_file.seekg(0, ios::beg);
-
-        // блоку "1 << 25" С++ неявно присваивает тип int
-        // чтобы избежать переполнения нужно преобразовать в size_t
-        size_t chunk = static_cast<size_t>(1) << 25;
-        size_t number_of_chunks = file_size / chunk;
-        size_t leftover = file_size % chunk;
-        vector<char> buffer(chunk, 0);
-
-        // Хэш из нескольких блоков данных
-        // https://cryptopp.com/wiki/Hash_Functions
-        // Расчет скорости:
-        // https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
-
         uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
         CryptoPP::SHA1 hash;
 
         auto start = high_resolution_clock::now();
-        for (int i = 0; i < number_of_chunks; i++)
-        {
-            hash_file.read(buffer.data(), chunk);
-            hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), chunk);
-        }
-        hash_file.read(buffer.data(), leftover);
-        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), leftover);
 
-        // Сборка всех кусков в один хэш
+        for (const auto &block : *buffer)
+        {
+            hash.Update(reinterpret_cast<const CryptoPP::byte*>(block.data()), block.size());
+        }
         hash.Final(digest);
+
         auto stop = high_resolution_clock::now();
 
         cout << "CryptoPP: " << endl;
-
         cout << "Hash sum of a file: ";
         for (auto i : digest)
         {
@@ -62,23 +39,13 @@ void CryptoPP_hash(const char* filename)
 
         auto duration = duration_cast<microseconds>(stop - start);
         cout << "Digesting time: " << dec << duration.count() / 1e6 << " seconds" << endl;
-        cout << "File size: " << dec << file_size / (1024 * 1024) << " MB" << endl;
+        cout << "File size: " << dec << *file_size / (1024 * 1024) << " MB" << endl;
 
         // Перевод B/mus в MB/s
-        double speed = (file_size / 1e6) / (duration.count() / 1e6);
+        double speed = (*file_size / 1e6) / (duration.count() / 1e6);
         cout << "Calculation speed: " << speed << " MB/s" << endl;
 
-        hash_file.close();
-        
-        buffer.clear();
-        // Очистка heap
-        buffer.shrink_to_fit();
         cout << endl;
-    }
-    else
-    {
-        cout << "Couldn't open file: " << filename << endl;
-    }
 };
 
 #endif // CRYPTOPP

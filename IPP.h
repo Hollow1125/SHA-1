@@ -16,20 +16,8 @@
 using namespace std;
 using namespace std::chrono;
 
-void IntelPP_hash(const char* filename)
+void IntelPP_hash(const char* filename, const vector<vector<char>>* buffer, const size_t* file_size)
 {
-    ifstream hash_file(filename, ios::binary);
-    if (hash_file.is_open())
-    {
-        hash_file.seekg(0, ios::end);
-        size_t file_size = hash_file.tellg();
-        hash_file.seekg(0, ios::beg);
-
-        size_t chunk = static_cast<size_t>(1) << 25;
-        size_t number_of_chunks = file_size / chunk;
-        size_t leftover = file_size % chunk;
-        vector<char> buffer(chunk, 0);
-
         const IppsHashMethod* pMethod = ippsHashMethod_SHA1();
         int buffer_size = 0;
         ippsHashGetSize_rmf(&buffer_size);
@@ -38,18 +26,15 @@ void IntelPP_hash(const char* filename)
         uint8_t digest[20];
 
         auto start = high_resolution_clock::now();
-        for (int i = 0; i < number_of_chunks; i++)
-        {
-            hash_file.read(buffer.data(), chunk);
-            ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), chunk, hash);
-        }
-        hash_file.read(buffer.data(), leftover);
-        ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), leftover, hash);
 
+        for (const auto& block : *buffer)
+        {
+            ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(block.data()), block.size(), hash);
+        }
         ippsHashFinal_rmf(digest, hash);
+
         auto stop = high_resolution_clock::now();
 
-        // Очистка памяти
         ippsFree(hash);
 
         cout << "Intel IPP: " << endl;

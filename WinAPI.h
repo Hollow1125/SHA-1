@@ -17,7 +17,7 @@
 using namespace std;
 using namespace std::chrono;
 
-void WinAPI_hash(const char* filename)
+void WinAPI_hash(const char* filename, const vector<vector<char>>* buffer, const size_t* file_size)
 {
     ifstream hash_file(filename, ios::binary);
     if (hash_file.is_open())

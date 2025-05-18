@@ -20,6 +20,7 @@ void IntelPP_hash(const char* filename, const vector<vector<char>>* buffer, cons
 {
         const IppsHashMethod* pMethod = ippsHashMethod_SHA1();
         int buffer_size = 0;
+
         ippsHashGetSize_rmf(&buffer_size);
         IppsHashState_rmf* hash = (IppsHashState_rmf*)ippsMalloc_8u(buffer_size);
         ippsHashInit_rmf(hash, pMethod);  
@@ -48,22 +49,13 @@ void IntelPP_hash(const char* filename, const vector<vector<char>>* buffer, cons
 
         auto duration = duration_cast<microseconds>(stop - start);
         cout << "Digesting time: " << dec << duration.count() / 1e6 << " seconds" << endl;
-        cout << "File size: " << dec << file_size / (1024 * 1024) << " MB" << endl;
+        cout << "File size: " << dec << *file_size / (1024 * 1024) << " MB" << endl;
 
         // Перевод B/mus в MB/s
-        double speed = (file_size / 1e6) / (duration.count() / 1e6);
+        double speed = (*file_size / 1e6) / (duration.count() / 1e6);
         cout << "Calculation speed: " << speed << " MB/s" << endl;
 
-        hash_file.close();
-
-        buffer.clear();
-        buffer.shrink_to_fit();
         cout << endl;
-    }
-    else
-    {
-        cout << "Couldn't open file: " << filename << endl;
-    }
 };
 
 #endif // IPP

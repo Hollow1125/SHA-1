@@ -44,7 +44,6 @@ void CryptoPP_hash(const char* filename, const vector<vector<char>> *buffer, con
         // Перевод B/mus в MB/s
         double speed = (*file_size / 1e6) / (duration.count() / 1e6);
         cout << "Calculation speed: " << speed << " MB/s" << endl;
-
         cout << endl;
 };
 

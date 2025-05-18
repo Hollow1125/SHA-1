@@ -6,7 +6,70 @@
 2. Intel IPP
 3. Standard Windows API (CNG)
 
-## CryptoPP
+## Функционал
+
+Открытие файла в бинарном формате:
+```
+ifstream hash_file(filename, ios::binary);
+```
+Считывание размера файла:
+```
+hash_file.seekg(0, ios::end);
+size_t file_size = hash_file.tellg();
+hash_file.seekg(0, ios::beg);
+```
+Создание блоков (чанков), по которым будет происходит считывание файла:
+```
+size_t chunk = static_cast<size_t>(1) << 25; // 00000010 00000000 00000000 00000000 = 32 Мб
+size_t number_of_chunks = file_size / chunk; // Количество блоков для обхода в цикле
+size_t leftover = file_size % chunk; // Остаток от деления на блоки
+```
+Создание вектора, в который будет идти запись:
+```
+vector<vector<char>> buffer;
+vector<char> block(chunk, 0);
+```	
+Цикл для последовательного считывания файла по блокам:
+```
+ for (int i = 0; i < number_of_chunks; i++)
+{
+    hash_file.read(block.data(), chunk);
+    buffer.push_back(block);
+}
+ hash_file.read(block.data(), leftover);
+ buffer.push_back(block);
+```
+Вызов функции `CryptoPP_hash` с делением на потоки:
+```
+future<void> crypto_async = std::async(launch::async, &CryptoPP_hash, argv[1], &buffer, &file_size);
+cout << "Calculating hash..." << endl;
+crypto_async.get();
+```
+Вызов функции `IntelPP_hash` с делением на потоки:
+```
+future<void> intel_future = std::async(launch::async, &IntelPP_hash, argv[1], &buffer, &file_size);
+cout << "Calculating hash..." << endl;
+intel_future.get();
+```
+Вызов функции `WinAPI_hash` с делением на потоки:
+```
+future<void> cng_future = std::async(launch::async, &WinAPI_hash, argv[1], &buffer, &file_size);
+cout << "Calculating hash..." << endl;
+cng_future.get();
+```
+Закрытие файла:
+```
+hash_file.close();
+```
+Очистка буфера:
+```
+buffer.clear();
+buffer.shrink_to_fit();
+```
+
+**Важное замечание:** Несмотря на то, что функции вызываются в многопоточном режиме, сам алгоритм SHA-1 не поддерживает деление на потоки: расчет хэша для следующего блока данных невозможен, пока не завершится расчет для предыдущего.
+
+## CryptoPP_hash
 
 **Crypto++** (также известная как CryptoPP, libcrypto++ и libcryptopp) — это бесплатная библиотека C++ с открытым исходным кодом криптографических алгоритмов и схем, написанная китайским компьютерным инженером Вэй Даем. 
 Будучи выпущенной в 1995, библиотека полностью поддерживает 32-разрядные и 64-разрядные архитектуры для многих главных операционных систем и платформ, таких как Android (с использованием STLport), Apple (Mac OS X и iOS), Linux, MinGW, Solaris, Windows и др. 
@@ -35,27 +98,11 @@
 
 ### Описание работы библиотеки
 
-Реализация функции `CryptoPP_hash` с передачей имени файла в качества аргумента:
+Реализация функции `CryptoPP_hash` с передачей имени файла, вектора данных и размера файла в качества аргументов:
 ```
-void CryptoPP_hash(const char* filename)
+void CryptoPP_hash(const char* filename, const vector<vector<char>> *buffer, const size_t *file_size)
 ```
-Открытие файла в бинарном формате:
-```
-ifstream hash_file(filename, ios::binary);
-```
-Считывание размера файла:
-```
-hash_file.seekg(0, ios::end);
-size_t file_size = hash_file.tellg();
-hash_file.seekg(0, ios::beg);
-```
-Создание блоков (чанков), по которым будет происходит считывание файла:
-```
-size_t chunk = static_cast<size_t>(1) << 25; // 00000010 00000000 00000000 00000000 = 32 Мб
-size_t number_of_chunks = file_size / chunk; // Количество блоков для обхода в цикле
-size_t leftover = file_size % chunk; // Остаток от деления на блоки
-vector<char> buffer(chunk, 0); // Инициализация вектора для считывания файла
-```
+
 Определение размера хэш-суммы, а также определение способа расчета этой суммы:
 ```
 uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
@@ -65,22 +112,16 @@ CryptoPP::SHA1 hash;
 ```
 auto start = high_resolution_clock::now();
 ```
-Цикл для последовательного считывания и расчета хэш-суммы каждого из блоков:
+Цикл для обхода вектора и расчета хэш-суммы каждого из блоков:
 ```
- for (int i = 0; i < number_of_chunks; i++)
- {
-     hash_file.read(buffer.data(), chunk);
-     hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), chunk);
- }
-```
-Расчет хэш-суммы для остатка:
-```
- hash_file.read(buffer.data(), leftover);
- hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), leftover);
+for (const auto &block : *buffer)
+{
+	hash.Update(reinterpret_cast<const CryptoPP::byte*>(block.data()), block.size());
+}
 ```
 Сборка всех частей хэш-суммы в одну цельную последовательность:
 ```
- hash.Final(digest);
+hash.Final(digest);
 ```
 Остановка счета времени:
 ```
@@ -102,19 +143,10 @@ auto duration = duration_cast<microseconds>(stop - start);
 ```
 double speed = (file_size / 1e6) / (duration.count() / 1e6);
 ```
-Закрытие файла:
-```
-hash_file.close();
-```
-Очистка буфера:
-```
-buffer.clear();
-buffer.shrink_to_fit();
-```
 
 ---
 
-## Intel IPP
+## IntelPP_hash
 
 **Intel Integrated Performance Primitives (IPP)** — это высокооптимизированная библиотека для обработки сигналов, изображений, видео, криптографии и других задач на базе SIMD-инструкций от Intel. Библиотека предоставляет готовые функции для быстрого выполнения операций, включая хэш-функции, такие как SHA1, SHA256 и др.
 Библиотека предназначена для платформ на базе x86/x64, поддерживает компиляторы Visual Studio, GCC, Clang, а также работает на Windows, Linux и macOS.
@@ -149,27 +181,11 @@ buffer.shrink_to_fit();
 
 ### Описание работы библиотеки
 
-Реализация функции `IntelPP_hash` с передачей имени файла в качестве аргумента:
+Реализация функции `IntelPP_hash` с передачей имени файла, вектора данных и размера файла в качества аргументов:
 ```
-void IntelPP_hash(const char* filename)
+void IntelPP_hash(const char* filename, const vector<vector<char>>* buffer, const size_t* file_size)
 ```
-Открытие файла в бинарном формате:
-```
-ifstream hash_file(filename, ios::binary);
-```
-Считывание размера файла:
-```
-hash_file.seekg(0, ios::end);
-size_t file_size = hash_file.tellg();
-hash_file.seekg(0, ios::beg);
-```
-Создание блоков (чанков), по которым будет происходит считывание файла:
-```
-size_t chunk = static_cast<size_t>(1) << 25; // 00000010 00000000 00000000 00000000 = 32 Мб
-size_t number_of_chunks = file_size / chunk; // Количество блоков для обхода в цикле
-size_t leftover = file_size % chunk; // Остаток от деления на блоки
-vector<char> buffer(chunk, 0); // Инициализация вектора для считывания файла
-```
+
 Указание метода расчета хэш-суммы через указатель на структуру, содержащую различные методы:
 ```
 const IppsHashMethod* pMethod = ippsHashMethod_SHA1();
@@ -195,22 +211,16 @@ uint8_t digest[20];
 ```
 auto start = high_resolution_clock::now();
 ```
-Цикл для последовательного считывания и расчета хэш-суммы каждого из блоков:
+Цикл для последовательного считывания вектора и расчета хэш-суммы каждого из блоков:
 ```
- for (int i = 0; i < number_of_chunks; i++)
- {
-    hash_file.read(buffer.data(), chunk);
-    ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), chunk, hash);
- }
-```
-Расчет хэш-суммы для остатка:
-```
- hash_file.read(buffer.data(), leftover);
- ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), leftover, hash);
+for (const auto& block : *buffer)
+{
+	ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(block.data()), block.size(), hash);
+}
 ```
 Сборка всех частей хэш-суммы в одну цельную последовательность:
 ```
- ippsHashFinal_rmf(digest, hash);
+ippsHashFinal_rmf(digest, hash);
 ```
 Остановка счета времени:
 ```
@@ -236,19 +246,10 @@ auto duration = duration_cast<microseconds>(stop - start);
 ```
 double speed = (file_size / 1e6) / (duration.count() / 1e6);
 ```
-Закрытие файла:
-```
-hash_file.close();
-```
-Очистка буфера:
-```
-buffer.clear();
-buffer.shrink_to_fit();
-```
 
 ---
 
-## Windows SDK
+## WinAPI_hash
 
 **Cryptography API: Next Generation (CNG)** — это современный криптографический интерфейс, встроенный в Windows, предоставляющий расширенный доступ к безопасным алгоритмам шифрования, хеширования и управления ключами. 
 Он пришёл на смену устаревшему CryptoAPI и является основой безопасности в системах Windows начиная с Windows Vista / Windows Server 2008.
@@ -276,26 +277,9 @@ buffer.shrink_to_fit();
 ```
 #define SHA1LEN 20
 ```
-Реализация функции `IntelPP_hash` с передачей имени файла в качестве аргумента:
+Реализация функции `IntelPP_hash` с передачей имени файла, вектора данных и размера файла в качества аргументов:
 ```
-void WinAPI_hash(const char* filename)
-```
-Открытие файла в бинарном формате:
-```
-ifstream hash_file(filename, ios::binary);
-```
-Считывание размера файла:
-```
-hash_file.seekg(0, ios::end);
-size_t file_size = hash_file.tellg();
-hash_file.seekg(0, ios::beg);
-```
-Создание блоков (чанков), по которым будет происходит считывание файла:
-```
-size_t chunk = static_cast<size_t>(1) << 25; // 00000010 00000000 00000000 00000000 = 32 Мб
-size_t number_of_chunks = file_size / chunk; // Количество блоков для обхода в цикле
-size_t leftover = file_size % chunk; // Остаток от деления на блоки
-vector<char> buffer(chunk, 0); // Инициализация вектора для считывания файла
+void WinAPI_hash(const char* filename, const vector<vector<char>>* buffer, const size_t* file_size)
 ```
 Инициализация пустого дескриптора для идентификации алгоритма:
 ```
@@ -337,25 +321,14 @@ auto start = high_resolution_clock::now();
 ```
 Цикл для последовательного считывания и расчета хэш-суммы каждого из блоков:
 ```
-for (int i = 0; i < number_of_chunks; i++)
-{
-	hash_file.read(buffer.data(), chunk);
-	status = BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(chunk), 0);
-	if (status != 0)
-	{
-		cout << "Failed to digest chunk #" << i << endl;
-		return;
-	}
-}
-```
-Расчет хэш-суммы для остатка:
-```
- hash_file.read(buffer.data(), leftover);
- status = BCryptHashData(hHash, reinterpret_cast<PUCHAR>(buffer.data()), static_cast<ULONG>(leftover), 0);
- if (status != 0)
+ for (auto& block : *buffer)
  {
-     cout << "Failed to digest last chunk" << endl;
-     return;
+     status = BCryptHashData(hHash, const_cast<PUCHAR>(reinterpret_cast<const BYTE*>(block.data())), static_cast<ULONG>(block.size()), 0);
+     if (status != 0)
+     {
+         cout << "Failed to digest chunk" << endl;
+         return;
+     }
  }
 ```
 Сборка всех частей хэш-суммы в одну цельную последовательность:
@@ -393,15 +366,6 @@ auto duration = duration_cast<microseconds>(stop - start);
 ```
 double speed = (file_size / 1e6) / (duration.count() / 1e6);
 ```
-Закрытие файла:
-```
-hash_file.close();
-```
-Очистка буфера:
-```
-buffer.clear();
-buffer.shrink_to_fit();
-```
 
 ---
 ## Запуск программы
@@ -414,55 +378,29 @@ SHA1.exe <\path\to\file>
 
 ## Сравнение результатов
 
-### Debug версия
-
 После запуска програмы для подсчета хэш-суммы файлас расширением `.rar` и размером 13.4 ГБ были получены следующие результаты:
 
 **CryptoPP**
 ```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.4723 seconds
+Hash sum of a file: 4f7d253ca17eb74d1d78cad80bfe615a6f893031
+Digesting time: 7.18752 seconds
 File size: 13723 MB
-Calculation speed: 162.654 MB/s
+Calculation speed: 2002.14 MB/s
 ```
 **Intel IPP**
 ```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.3924 seconds
+Hash sum of a file: 4f7d253ca17eb74d1d78cad80bfe615a6f893031
+Digesting time: 13.243 seconds
 File size: 13723 MB
-Calculation speed: 162.802 MB/s
+Calculation speed: 1086.64 MB/s
 ```
 **Windows standard API**
 ```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.4025 seconds
+Hash sum of a file: 4f7d253ca17eb74d1d78cad80bfe615a6f893031
+Digesting time: 18.8014 seconds
 File size: 13723 MB
-Calculation speed: 162.783 MB/s
+Calculation speed: 765.39 MB/s
 ```
 
-### Release версия
-
-**CryptoPP**
-```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.4665 seconds
-File size: 13723 MB
-Calculation speed: 162.665 MB/s
-```
-**Intel IPP**
-```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.4809 seconds
-File size: 13723 MB
-Calculation speed: 162.639 MB/s
-```
-**Windows standard API**
-```
-Hash sum of a file: 3646a1248834948dd8f8f842d694ee9fba0416d3
-Digesting time: 88.4505 seconds
-File size: 13723 MB
-Calculation speed: 162.695 MB/s
-```
-
-Из полученных результатов можно сделать вывод о равнозначности библиотек в вопросе подсчета хэш-сумм в виду незначительной разницы во времени подсчета.
-Однако стоит отметить, что стандартный встроенный API является приоритетным выбором для расчета хэш-суммы, поскольку его не нужно линковать к проекту.
+Из полученных результатов можно сделать вывод о том, что CryptoPP библиотека наиболее быстро способно рассчитать хэш-сумму по алгоритму SHA-1. Библиотека CNG хоть и расчитывает сумму медленнее остальных, однако наиболее просто подключается к проекту.
+Однако стоит отметить, стандартный встроенный API поставляется в комплекте с Windows Developer Kit (SDK) и имеет объем ~10ГБ, что может не подойти для систем с ограниченным дисковым пространством.

@@ -53,7 +53,6 @@ int main(int argc, char* argv[])
         cng_future.get();
         
         hash_file.close();
-
         buffer.clear();
         buffer.shrink_to_fit();
     }

@@ -43,8 +43,11 @@ void IntelPP_hash(const char* filename)
             hash_file.read(buffer.data(), chunk);
             ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), chunk, hash);
         }
-        hash_file.read(buffer.data(), leftover);
-        ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), leftover, hash);
+        if (leftover > 0)
+        {
+            hash_file.read(buffer.data(), leftover);
+            ippsHashUpdate_rmf(reinterpret_cast<const Ipp8u*>(buffer.data()), leftover, hash);
+        }
 
         ippsHashFinal_rmf(digest, hash);
         auto stop = high_resolution_clock::now();
@@ -71,8 +74,6 @@ void IntelPP_hash(const char* filename)
 
         hash_file.close();
 
-        buffer.clear();
-        buffer.shrink_to_fit();
         cout << endl;
     }
     else

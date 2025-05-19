@@ -10,8 +10,41 @@
 #include <iomanip>
 #include <future>
 
+
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+
+
 using namespace std;
 using namespace std::chrono;
+
+
+
+queue<vector<char>> buffer_queue;
+mutex queue_mutex;
+condition_variable queue_cv;
+bool hashing_done = false;
+
+
+void hashing_worker(CryptoPP::SHA1& hash) {
+    while (true) {
+        vector<char> buffer;
+        {
+            unique_lock<mutex> lock(queue_mutex);
+            queue_cv.wait(lock, [] { return !buffer_queue.empty() || hashing_done; });
+
+            if (buffer_queue.empty() && hashing_done)
+                break;
+
+            buffer = move(buffer_queue.front());
+            buffer_queue.pop();
+        }
+        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer.data()), buffer.size());
+    }
+}
 
 
 void CryptoPP_hash(const char* filename)
@@ -34,43 +67,37 @@ void CryptoPP_hash(const char* filename)
 
     future<void> hasher;
 
+    thread worker(hashing_worker, ref(hash));
+
     auto start = high_resolution_clock::now();
     for (size_t i = 0; i < number_of_chunks; ++i)
     {
         size_t current_buffer = i % buffers.size();
-        //if (i != number_of_chunks - 1)
-       // {
-            hash_file.read(buffers[current_buffer].data(), chunk);
-        //}
-       // else if (i == number_of_chunks - 1)
-       // {
-       //     hash_file.read(big_buffer.data(), chunk + leftover);
-       // }
 
-        // Ожидание завершения чтения предыдущего чанка
-        if (hasher.valid())
-        {
-            hasher.wait();
-        }
+            hash_file.read(buffers[current_buffer].data(), chunk);
+
 
         // Чтение предыдущего чанка
-        if (i > 0)
-        {
-        size_t previous_buffer = (i - 1) % buffers.size();
-        hasher = async(launch::async, [&hash, buffers, previous_buffer, chunk]()
+            if (i > 0)
             {
-                hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffers[previous_buffer].data()), chunk);
-            });
-        }
-        else
-        {
-            continue;
-        }
+                size_t previous_buffer = (i - 1) % buffers.size();
+                {
+                    lock_guard<mutex> lock(queue_mutex);
+                    buffer_queue.push(buffers[previous_buffer]); // copy or move
+                }
+                queue_cv.notify_one();
+            }
+            else
+            {
+                continue;
+            }
     }
-    if (hasher.valid())
     {
-        hasher.wait();
+        lock_guard<mutex> lock(queue_mutex);
+        hashing_done = true;
     }
+    queue_cv.notify_one();
+    worker.join();
 
     size_t last_chunk = (number_of_chunks - 1) % buffers.size();
     hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffers[last_chunk].data()), chunk);

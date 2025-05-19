@@ -27,7 +27,6 @@ void CryptoPP_hash(const char* filename)
     size_t leftover = file_size % chunk;
 
     vector<vector<char>> buffers(3, vector<char>(chunk, 0));
-    //vector<char> big_buffer(chunk + leftover, 0);
 
     uint8_t digest[CryptoPP::SHA1::DIGESTSIZE];
     CryptoPP::SHA1 hash;
@@ -38,14 +37,7 @@ void CryptoPP_hash(const char* filename)
     for (size_t i = 0; i < number_of_chunks; ++i)
     {
         size_t current_buffer = i % buffers.size();
-        //if (i != number_of_chunks - 1)
-       // {
-            hash_file.read(buffers[current_buffer].data(), chunk);
-        //}
-       // else if (i == number_of_chunks - 1)
-       // {
-       //     hash_file.read(big_buffer.data(), chunk + leftover);
-       // }
+        hash_file.read(buffers[current_buffer].data(), chunk);
 
         // ќжидание завершени€ чтени€ предыдущего чанка
         if (hasher.valid())
